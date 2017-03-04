@@ -1,10 +1,12 @@
 package wav
 
 import (
+	"fmt"
 	"io"
 	"time"
 
 	"github.com/loov/audio"
+	"github.com/loov/audio/codec/wav/wavdata"
 	"github.com/loov/audio/slice"
 )
 
@@ -66,33 +68,16 @@ func (reader *Reader) ReadInterleavedBlock(block []float32) (frameCount int) {
 	}
 	maxSamples := maxFrames * reader.ChannelCount()
 
-	h, src := reader.head, reader.data.Data
+	codec, ok := wavdata.Codecs[wavdata.Format{
+		reader.format.Encoding,
+		reader.format.BitsPerSample,
+	}]
 
-	switch reader.format.BitsPerSample {
-	case 8: // unsigned 8bit
-		for k := 0; k < maxSamples; k++ {
-			v := uint8(src[h])
-			block[k] = float32(v)/128.0 - 1.0
-			h += 1
-		}
-	case 16: // signed 16bit; -32,768 (0x7FFF) to 32,767 (0x8000)
-		for k := 0; k < maxSamples; k++ {
-			v := int16(src[h]) | int16(src[h+1])<<8
-			block[k] = float32(v) / float32(0x8000)
-			h += 2
-		}
-	case 32: // signed 32bit
-		h := reader.head
-		for k := 0; k < maxSamples; k++ {
-			v := int32(src[h]) | int32(src[h+1])<<8 | int32(src[h+2])<<8 | int32(src[h+3])<<8
-			block[k] = float32(v) / float32(0xFFFFFFFF)
-			h += 4
-		}
-	default:
-		panic("unimplemented bits per sample")
+	if !ok {
+		panic(fmt.Sprintf("unsupported codec %v", codec))
 	}
-	reader.head = h
 
+	reader.head += codec.ReadF32(reader.data.Data[reader.head:], block, maxSamples)
 	return maxFrames
 }
 

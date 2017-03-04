@@ -1,5 +1,7 @@
 package wav
 
+import "github.com/loov/audio/codec/wav/wavdata"
+
 func findSubChunk(data []byte, target [4]byte) []byte {
 	var id [4]byte
 	var size uint32
@@ -29,12 +31,12 @@ type header struct {
 type format struct {
 	ChunkID       [4]byte // "fmt "
 	ChunkSize     uint32  // 16 for PCM, size rest of header
-	AudioFormat   uint16  // 1 == linear, ...
-	NumChannels   uint16  // 1, 2, ...
-	SampleRate    uint32  // 8000, 41000 ...
-	ByteRate      uint32  // SampleRate * NumChannels * BitsPerSample / 8
-	BlockAlign    uint16  // NumChannels * BitsPerSample / 8
-	BitsPerSample uint16  // 8, 16
+	Encoding      wavdata.Encoding
+	NumChannels   uint16 // 1, 2, ...
+	SampleRate    uint32 // 8000, 41000 ...
+	ByteRate      uint32 // SampleRate * NumChannels * BitsPerSample / 8
+	BlockAlign    uint16 // NumChannels * BitsPerSample / 8
+	BitsPerSample uint16 // 8, 16
 	// Extra Parameters
 }
 
@@ -72,7 +74,9 @@ func (chunk *format) Read(data []byte) (rest []byte) {
 	p := 0
 	p += copy(chunk.ChunkID[:], data[p:])
 	p += readU32LE(&chunk.ChunkSize, data[p:])
-	p += readU16LE(&chunk.AudioFormat, data[p:])
+	var form uint16
+	p += readU16LE(&form, data[p:])
+	chunk.Encoding = wavdata.Encoding(form)
 	p += readU16LE(&chunk.NumChannels, data[p:])
 	p += readU32LE(&chunk.SampleRate, data[p:])
 	p += readU32LE(&chunk.ByteRate, data[p:])

@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/loov/audio/codec/wav/wavdata"
 )
 
 func hex2bytes(data string) []byte {
@@ -53,7 +55,7 @@ func TestBytesReader(t *testing.T) {
 	fmt := format{
 		ChunkID:       [4]byte{'f', 'm', 't', ' '},
 		ChunkSize:     16,
-		AudioFormat:   1,
+		Encoding:      wavdata.PCM,
 		NumChannels:   2,
 		SampleRate:    22050,
 		ByteRate:      88200,
