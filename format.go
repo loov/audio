@@ -27,6 +27,12 @@ func (format Format) FrameCount(duration time.Duration) int {
 }
 
 func FrameCountToDuration(frameCount, sampleRate int) time.Duration {
+	// TODO: use int64 in calculations
 	seconds := float64(frameCount) / float64(sampleRate)
 	return time.Duration(float64(time.Second) * seconds)
+}
+
+func DurationToFrameCount(duration time.Duration, sampleRate int) int {
+	// TODO: use int64 in calculations
+	return int(float64(duration) * float64(sampleRate) / float64(time.Second))
 }

@@ -32,6 +32,11 @@ type Reader interface {
 	Read(Buffer) (int, error)
 }
 
+type ReadSeeker interface {
+	Reader
+	Seeker
+}
+
 type Processor interface {
 	Process(Buffer) error
 }

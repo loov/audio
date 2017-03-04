@@ -43,6 +43,12 @@ func (reader *Reader) Duration() time.Duration {
 	return audio.FrameCountToDuration(reader.FrameCount(), reader.SampleRate())
 }
 
+func (reader *Reader) Seek(offset time.Duration, whence int) (time.Duration, error) {
+	offsetFrames := audio.DurationToFrameCount(offset, reader.SampleRate())
+	reader.head = offsetFrames * int(reader.format.BlockAlign)
+	return reader.Position(), nil
+}
+
 func (reader *Reader) Position() time.Duration {
 	frameHead := reader.head / int(reader.format.BlockAlign)
 	return audio.FrameCountToDuration(frameHead, reader.SampleRate())

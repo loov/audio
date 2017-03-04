@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -10,6 +11,33 @@ import (
 	"github.com/loov/audio/codec/wav"
 	"github.com/loov/audio/native"
 )
+
+var (
+	loop = flag.Bool("loop", false, "")
+)
+
+type Looper struct{ audio.ReadSeeker }
+
+func (reader *Looper) Read(buf audio.Buffer) (int, error) {
+	totalFrameCount := 0
+	dst := buf.ShallowCopy()
+	for !dst.Empty() {
+		frameCount, err := reader.ReadSeeker.Read(dst)
+		dst.CutLeading(frameCount)
+		totalFrameCount += frameCount
+		if err != nil {
+			if err == io.EOF {
+				_, err := reader.ReadSeeker.Seek(0, 0)
+				if err != nil {
+					return totalFrameCount, err
+				}
+				continue
+			}
+			return totalFrameCount, err
+		}
+	}
+	return totalFrameCount, nil
+}
 
 func check(err error) {
 	if err != nil {
@@ -50,6 +78,11 @@ func main() {
 	fmt.Printf("\n\n\n")
 	fmt.Println(reader.Duration())
 
-	pipe := audio.Pipe{reader, nil, output}
+	var source audio.Reader = reader
+	if *loop {
+		source = &Looper{reader}
+	}
+
+	pipe := audio.Pipe{source, nil, output}
 	check(pipe.Run(buf))
 }
