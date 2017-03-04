@@ -25,6 +25,8 @@ func NewBufferF64Frames(format Format, frames int) *BufferF64 {
 	}
 }
 
+func (b *BufferF64) InternalBuffer() []float64 { return b.data }
+
 func (b *BufferF64) Channel(index int) []float64 {
 	start := int(b.offset) + index*int(b.stride)
 	return b.data[start : start+int(b.frames)]

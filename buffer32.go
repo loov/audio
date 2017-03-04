@@ -25,6 +25,8 @@ func NewBufferF32Frames(format Format, frames int) *BufferF32 {
 	}
 }
 
+func (b *BufferF32) InternalBuffer() []float32 { return b.data }
+
 func (b *BufferF32) Channel(index int) []float32 {
 	start := int(b.offset) + index*int(b.stride)
 	return b.data[start : start+int(b.frames)]
