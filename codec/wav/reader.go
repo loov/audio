@@ -16,8 +16,7 @@ type Reader struct {
 	header header
 	format format
 	data   data
-
-	head int // in data
+	head   int
 
 	buffered  []float32
 	_buffered []float32
@@ -102,5 +101,8 @@ func (reader *Reader) Read(buf audio.Buffer) (int, error) {
 		totalFrameCount += frameCount
 	}
 
+	if reader.framesLeft() == 0 {
+		return totalFrameCount, io.EOF
+	}
 	return totalFrameCount, nil
 }
