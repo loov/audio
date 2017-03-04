@@ -81,13 +81,13 @@ func (reader *Reader) ReadInterleavedBlock(block []float32) (frameCount int) {
 			block[k] = float32(v) / float32(0x8000)
 			h += 2
 		}
-	case 32: // signed 32bit
-		h := reader.head
-		for k := 0; k < maxSamples; k++ {
-			v := int32(src[h]) | int32(src[h+1])<<8 | int32(src[h+2])<<8 | int32(src[h+3])<<8
-			block[k] = float32(v) / float32(0x80000000)
-			h += 4
-		}
+	//case 32: // signed 32bit
+	//	h := reader.head
+	//	for k := 0; k < maxSamples; k++ {
+	//		v := int32(src[h]) | int32(src[h+1])<<8 | int32(src[h+2])<<8 | int32(src[h+3])<<8
+	//		block[k] = float32(v) / float32(0xFFFFFFFF)
+	//		h += 4
+	//	}
 	default:
 		panic("unimplemented bits per sample")
 	}
@@ -107,7 +107,7 @@ func (reader *Reader) Read(buf audio.Buffer) (int, error) {
 	for !dst.Empty() {
 		if len(reader.buffered) <= 0 {
 			n := reader.ReadInterleavedBlock(reader._buffered)
-			reader.buffered = reader._buffered[:n]
+			reader.buffered = reader._buffered[:n*channelCount]
 		}
 
 		frameCount := slice.Split32(reader.ChannelCount(), reader.buffered, dst)
