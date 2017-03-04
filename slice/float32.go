@@ -28,6 +28,42 @@ func ScaleLinearLerp32(data []float32, from, to float32) {
 	}
 }
 
+func Split32(nchan int, buf []float32, dst audio.Buffer) (frameCount int) {
+	channelCount := dst.ChannelCount()
+	if channelCount != nchan {
+		// TODO mixing/splitting when needed
+		panic("channel count does not match")
+	}
+
+	maxFrames := len(buf) / nchan
+	if dst.FrameCount() < maxFrames {
+		maxFrames = dst.FrameCount()
+	}
+
+	maxSamples := maxFrames * nchan
+
+	switch dst := dst.(type) {
+	case *audio.BufferF32:
+		for k := 0; k < channelCount; k++ {
+			out := dst.Channel(k)
+			for si, di := k, 0; si < maxSamples; si, di = si+nchan, di+1 {
+				out[di] = buf[si]
+			}
+		}
+	case *audio.BufferF64:
+		for k := 0; k < channelCount; k++ {
+			out := dst.Channel(k)
+			for si, di := k, 0; si < maxSamples; si, di = si+nchan, di+1 {
+				out[di] = float64(buf[si])
+			}
+		}
+	default:
+		panic("missing")
+	}
+
+	return maxFrames
+}
+
 func Interleave32(buf audio.Buffer, nchan int, dst []float32) (frameCount int) {
 	channelCount := buf.ChannelCount()
 	if channelCount != nchan {

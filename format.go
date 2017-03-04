@@ -25,3 +25,8 @@ func (format Format) FrameCount(duration time.Duration) int {
 	seconds := duration.Seconds()
 	return int(math.Ceil(seconds * float64(format.SampleRate)))
 }
+
+func FrameCountToDuration(frameCount, sampleRate int) time.Duration {
+	seconds := float64(frameCount) / float64(sampleRate)
+	return time.Duration(float64(time.Second) * seconds)
+}
