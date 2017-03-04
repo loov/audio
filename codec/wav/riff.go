@@ -1,5 +1,25 @@
 package wav
 
+func findSubChunk(data []byte, target [4]byte) []byte {
+	var id [4]byte
+	var size uint32
+	for len(data) >= 8 {
+		copy(id[:], data)
+		readU32LE(&size, data[4:])
+		if id == target {
+			return data
+		}
+
+		chunkSize := int(size)
+		if id == [4]byte{'R', 'I', 'F', 'F'} {
+			chunkSize = 4
+		}
+
+		data = data[8+chunkSize:]
+	}
+	return nil
+}
+
 type header struct {
 	ChunkID   [4]byte // "RIFF"
 	ChunkSize uint32  // 4 + (8 + fmt.ChunkSize) + (8 + data.ChunkSize)
@@ -48,6 +68,7 @@ func (chunk *header) Read(data []byte) (rest []byte) {
 }
 
 func (chunk *format) Read(data []byte) (rest []byte) {
+	data = findSubChunk(data, [4]byte{'f', 'm', 't', ' '})
 	p := 0
 	p += copy(chunk.ChunkID[:], data[p:])
 	p += readU32LE(&chunk.ChunkSize, data[p:])
@@ -57,10 +78,12 @@ func (chunk *format) Read(data []byte) (rest []byte) {
 	p += readU32LE(&chunk.ByteRate, data[p:])
 	p += readU16LE(&chunk.BlockAlign, data[p:])
 	p += readU16LE(&chunk.BitsPerSample, data[p:])
-	return data[p:]
+	return data[8+int(chunk.ChunkSize):]
 }
 
 func (chunk *data) Read(data []byte) (rest []byte) {
+	data = findSubChunk(data, [4]byte{'d', 'a', 't', 'a'})
+
 	p := 0
 	p += copy(chunk.ChunkID[:], data[p:])
 	p += readU32LE(&chunk.ChunkSize, data[p:])
