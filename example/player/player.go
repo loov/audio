@@ -47,6 +47,9 @@ func main() {
 			SampleRate:   info.SampleRate,
 		}, info.SamplesPerChannel)
 
+	fmt.Printf("\n\n\n")
+	fmt.Println(reader.Duration())
+
 	pipe := audio.Pipe{reader, nil, output}
 	check(pipe.Run(buf))
 }
