@@ -1,7 +1,6 @@
 package sequencer
 
 import (
-	"math/rand"
 	"time"
 
 	"github.com/loov/audio"
@@ -26,6 +25,17 @@ type Metronome struct {
 		Frame int
 		Next  int // frames until next frame
 	}
+
+	Sound struct {
+		Enabled   bool
+		Frequency float32
+
+		Volume      float32
+		VolumeDecay float32
+		Phase       float32
+		LastPhase   float32
+		PhaseSpeed  float32
+	}
 }
 
 func (metronome *Metronome) UpdateSampleRate(sampleRate int) {
@@ -34,14 +44,25 @@ func (metronome *Metronome) UpdateSampleRate(sampleRate int) {
 	}
 
 	metronome.SampleRate = sampleRate
-	// calculate measure length
-	beatsPerSecond := metronome.BeatsPerMinute / 60
-	metronome.Measure.Duration = time.Duration(float32(time.Second) / beatsPerSecond)
-	metronome.Measure.Length = audio.DurationToFrameCount(metronome.Measure.Duration, metronome.SampleRate)
+	{
+		// calculate measure length
+		beatsPerSecond := metronome.BeatsPerMinute / 60
+		metronome.Measure.Duration = time.Duration(float32(time.Second) / beatsPerSecond)
+		metronome.Measure.Length = audio.DurationToFrameCount(metronome.Measure.Duration, metronome.SampleRate)
 
-	// update calculated fields
-	metronome.Measure.Frame = audio.DurationToFrameCount(metronome.Measure.Time, metronome.SampleRate)
-	metronome.Measure.Next = metronome.Measure.Length - metronome.Measure.Frame
+		// update calculated fields
+		metronome.Measure.Frame = audio.DurationToFrameCount(metronome.Measure.Time, metronome.SampleRate)
+		metronome.Measure.Next = metronome.Measure.Length - metronome.Measure.Frame
+	}
+
+	{
+		metronome.Sound.Enabled = true
+		metronome.Sound.Frequency = 880
+		metronome.Sound.Volume = 0.0
+		metronome.Sound.VolumeDecay = 1 / (0.1 * float32(metronome.SampleRate))
+		metronome.Sound.Phase = 0.0
+		metronome.Sound.PhaseSpeed = 2 * metronome.Sound.Frequency / float32(metronome.SampleRate)
+	}
 }
 
 func (metronome *Metronome) Advance(buf audio.Buffer) {
@@ -65,45 +86,26 @@ func (metronome *Metronome) Process(buf audio.Buffer) error {
 		k = 0
 	}
 
-	scale := float32(0.0)
-
-	var saws [8]float32
-	baserise := float32(0.002)
-	basescale := float32(1.6)
-
-	var lastsaw float32
-	//decay := 1 * float32(buf.SampleRate())
+	snd := &metronome.Sound
 	generate.MonoF32(buf, func() float32 {
-		//scale -= 0.0008
-		scale -= 0.00005
+		snd.Volume -= snd.VolumeDecay
 		if k <= 0 {
-			scale = 1.0
-			baserise = 0.002 + rand.Float32()*0.01
-			basescale = 1.0 + rand.Float32()
+			snd.Volume = 1.0
 			k += metronome.Measure.Length
 		}
-		k--
-		if scale < 0 {
-			lastsaw = 0.0
+
+		if snd.Volume < 0 {
 			return 0
 		}
 
-		saw := float32(0.0)
-		rise := baserise
-		vol := float32(1.0)
-		for i := range saws {
-			saws[i] += rise
-			if saws[i] > 1.0 {
-				saws[i] -= 2.0
-			}
-			saw += saws[i] * vol
-			vol *= 0.7
-			rise *= basescale
+		snd.Phase += snd.PhaseSpeed
+		if snd.Phase > 1 {
+			snd.Phase -= 2.0
 		}
-		saw = lastsaw*0.7 + saw*0.3
-		lastsaw = saw
 
-		return (saw + rand.Float32()*0.1 - 0.05) * scale
+		p := snd.LastPhase*0.5 + snd.Phase*0.5
+		snd.LastPhase = p
+		return p * snd.Volume
 	})
 
 	metronome.Advance(buf)
