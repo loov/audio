@@ -8,7 +8,6 @@ import (
 
 	"github.com/loov/audio"
 	"github.com/loov/audio/bufferutil"
-	"github.com/loov/audio/codec/wav"
 	"github.com/loov/audio/native"
 	"github.com/loov/audio/sequencer"
 )
@@ -30,7 +29,7 @@ func main() {
 	output, err := native.NewOutputDevice(audio.DeviceInfo{
 		ChannelCount:      2,
 		SampleRate:        44100,
-		SamplesPerChannel: 128,
+		SamplesPerChannel: 256,
 		//SamplesPerChannel: 44100,
 	})
 	check(err)
@@ -47,31 +46,32 @@ func main() {
 	seq.Metronome.Sound.MasterVolume = 0.001
 	seq.Pool.LoadDirectory("~samples\\")
 
-	NewTrack := func(samples []*wav.Reader) *sequencer.Track {
+	NewTrack := func(name string) *sequencer.Track {
 		track := &sequencer.Track{}
+		track.Name = name
 		track.Volume = 1
 		track.Sequencer = seq
 		track.Synced = true
 		seq.Tracks = append(seq.Tracks, track)
-		track.Samples = samples
+		track.Samples = seq.Pool.Subset(name)
 		return track
 	}
 
-	Bass := NewTrack(seq.Pool.Subset("Bass"))
-	Bass.Volume = 0.4
-	BassPluck := NewTrack(seq.Pool.Subset("Bass Pluck"))
-	BassPluck.Volume = 0
-	Cello := NewTrack(seq.Pool.Subset("Cello"))
+	Bass := NewTrack("Bass")
+	Bass.Volume = 0
+	BassPluck := NewTrack("Bass Pluck")
+	BassPluck.Volume = 1
+	Cello := NewTrack("Cello")
 	Cello.Volume = 0
-	LeadFlute := NewTrack(seq.Pool.Subset("Lead Flute"))
-	LeadFlute.Volume = 0.4
-	ViolinA0 := NewTrack(seq.Pool.Subset("Violin A0"))
+	LeadFlute := NewTrack("Lead Flute")
+	LeadFlute.Volume = 0
+	ViolinA0 := NewTrack("Violin A0")
 	ViolinA0.Volume = 1
-	ViolinA1 := NewTrack(seq.Pool.Subset("Violin A1"))
-	ViolinA1.Volume = 0.5
-	ViolinB0 := NewTrack(seq.Pool.Subset("Violin B0"))
+	ViolinA1 := NewTrack("Violin A1")
+	ViolinA1.Volume = 0.3
+	ViolinB0 := NewTrack("Violin B0")
 	ViolinB0.Volume = 0
-	ViolinB1 := NewTrack(seq.Pool.Subset("Violin B1"))
+	ViolinB1 := NewTrack("Violin B1")
 	ViolinB1.Volume = 0
 
 	for {

@@ -9,9 +9,11 @@ import (
 )
 
 type Track struct {
-	Sequencer *Sequencer
+	Name string
 
-	Volume float32
+	Sequencer *Sequencer
+	Enabled   bool
+	Volume    float32
 
 	Synced  bool
 	Samples []*wav.Reader
@@ -50,6 +52,9 @@ func (delay *Delay) Process(buf audio.Buffer) error {
 }
 
 func (track *Track) Process(buf audio.Buffer) error {
+	if track.Enabled {
+		return nil
+	}
 	if track.Temporary == nil {
 		track.Temporary = buf.DeepCopy()
 	}
