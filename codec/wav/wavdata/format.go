@@ -142,7 +142,7 @@ var Codecs = map[Format]Codec{
 			for k := 0; k < sampleCount; k++ {
 				v := int16(src[h]) | int16(src[h+1])<<8
 				dst[k] = float32(v) / float32(0x8000)
-				h += 16
+				h += 2
 			}
 			return h
 		},

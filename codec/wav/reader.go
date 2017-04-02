@@ -36,6 +36,12 @@ func (reader *Reader) decode(data []byte) error {
 	return nil
 }
 
+func (reader *Reader) Clone() *Reader {
+	clone := &Reader{}
+	*clone = *reader
+	return clone
+}
+
 func (reader *Reader) FrameCount() int { return len(reader.data.Data) / int(reader.format.BlockAlign) }
 func (reader *Reader) SampleRate() int { return int(reader.format.SampleRate) }
 
@@ -81,7 +87,6 @@ func (reader *Reader) ReadInterleavedBlock(block []float32) (frameCount int) {
 	if !ok {
 		panic(fmt.Sprintf("unsupported codec %v", codec))
 	}
-
 	reader.head += codec.ReadF32(reader.data.Data[reader.head:], block, maxSamples)
 	return maxFrames
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/loov/audio"
+	"github.com/loov/audio/bufferutil"
 	"github.com/loov/audio/generate"
 )
 
@@ -30,6 +31,8 @@ type Metronome struct {
 		Enabled   bool
 		Frequency float32
 
+		MasterVolume float32
+
 		Volume      float32
 		VolumeDecay float32
 		Phase       float32
@@ -47,7 +50,7 @@ func (metronome *Metronome) UpdateSampleRate(sampleRate int) {
 	{
 		// calculate measure length
 		beatsPerSecond := metronome.BeatsPerMinute / 60
-		metronome.Measure.Duration = time.Duration(float32(time.Second) / beatsPerSecond)
+		metronome.Measure.Duration = time.Duration(float32(time.Second)/beatsPerSecond) * time.Duration(metronome.BeatsPerMeasure)
 		metronome.Measure.Length = audio.DurationToFrameCount(metronome.Measure.Duration, metronome.SampleRate)
 
 		// update calculated fields
@@ -56,7 +59,6 @@ func (metronome *Metronome) UpdateSampleRate(sampleRate int) {
 	}
 
 	{
-		metronome.Sound.Enabled = true
 		metronome.Sound.Frequency = 880
 		metronome.Sound.Volume = 0.0
 		metronome.Sound.VolumeDecay = 1 / (0.1 * float32(metronome.SampleRate))
@@ -87,26 +89,31 @@ func (metronome *Metronome) Process(buf audio.Buffer) error {
 	}
 
 	snd := &metronome.Sound
-	generate.MonoF32(buf, func() float32 {
-		snd.Volume -= snd.VolumeDecay
-		if k <= 0 {
-			snd.Volume = 1.0
-			k += metronome.Measure.Length
-		}
+	if snd.Enabled {
+		generate.MonoF32(buf, func() float32 {
+			snd.Volume -= snd.VolumeDecay
+			if k <= 0 {
+				snd.Volume = 1.0
+				k += metronome.Measure.Length
+			}
+			k--
 
-		if snd.Volume < 0 {
-			return 0
-		}
+			if snd.Volume < 0 {
+				return 0
+			}
 
-		snd.Phase += snd.PhaseSpeed
-		if snd.Phase > 1 {
-			snd.Phase -= 2.0
-		}
+			snd.Phase += snd.PhaseSpeed
+			if snd.Phase > 1 {
+				snd.Phase -= 2.0
+			}
 
-		p := snd.LastPhase*0.5 + snd.Phase*0.5
-		snd.LastPhase = p
-		return p * snd.Volume
-	})
+			p := snd.LastPhase*0.5 + snd.Phase*0.5
+			snd.LastPhase = p
+			return p * snd.Volume * snd.MasterVolume
+		})
+	} else {
+		bufferutil.Zero(buf)
+	}
 
 	metronome.Advance(buf)
 
