@@ -39,7 +39,8 @@ func (device *OutputDevice) Write(buf audio.Buffer) (int, error) {
 
 	frames := 0
 	for frames < frameCount {
-		n := slice.Interleave32(src, nchan, device.buffer[device.head:])
+
+		n := slice.CopySliceFrom32(src, nchan, device.buffer[device.head:])
 		frames += n
 		src.CutLeading(n)
 		device.head += n * nchan

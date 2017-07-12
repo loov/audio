@@ -55,10 +55,10 @@ func (b *BufferF64) DeepCopy() Buffer {
 
 func (b *BufferF64) Slice(low, high int) {
 	b.offset += uint32(low * b.ChannelCount())
-	b.frames = uint32((high - low) * b.ChannelCount())
+	b.frames = uint32(high - low)
 }
 
 func (b *BufferF64) CutLeading(low int) {
 	b.offset += uint32(low * b.ChannelCount())
-	b.frames -= uint32(low * b.ChannelCount())
+	b.frames -= uint32(low)
 }
