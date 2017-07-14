@@ -28,78 +28,6 @@ func ScaleLinearLerp32(data []float32, from, to float32) {
 	}
 }
 
-func Split32(nchan int, buf []float32, dst audio.Buffer) (frameCount int) {
-	channelCount := dst.ChannelCount()
-	if channelCount != nchan {
-		// TODO mixing/splitting when needed
-		panic("channel count does not match")
-	}
-
-	maxFrames := len(buf) / nchan
-	if dst.FrameCount() < maxFrames {
-		maxFrames = dst.FrameCount()
-	}
-
-	maxSamples := maxFrames * nchan
-
-	switch dst := dst.(type) {
-	case *audio.BufferF32:
-		for k := 0; k < channelCount; k++ {
-			out := dst.Channel(k)
-			for si, di := k, 0; si < maxSamples; si, di = si+nchan, di+1 {
-				out[di] = buf[si]
-			}
-		}
-	case *audio.BufferF64:
-		for k := 0; k < channelCount; k++ {
-			out := dst.Channel(k)
-			for si, di := k, 0; si < maxSamples; si, di = si+nchan, di+1 {
-				out[di] = float64(buf[si])
-			}
-		}
-	default:
-		panic("missing")
-	}
-
-	return maxFrames
-}
-
-func Interleave32(buf audio.Buffer, nchan int, dst []float32) (frameCount int) {
-	channelCount := buf.ChannelCount()
-	if channelCount != nchan {
-		// TODO mixing/splitting when needed
-		panic("channel count does not match")
-	}
-
-	maxFrames := len(dst) / nchan
-	if buf.FrameCount() < maxFrames {
-		maxFrames = buf.FrameCount()
-	}
-
-	maxSamples := maxFrames * nchan
-
-	switch buf := buf.(type) {
-	case *audio.BufferF32:
-		for k := 0; k < channelCount; k++ {
-			src := buf.Channel(k)
-			for di, si := k, 0; di < maxSamples; di, si = di+nchan, si+1 {
-				dst[di] = float32(src[si])
-			}
-		}
-	case *audio.BufferF64:
-		for k := 0; k < channelCount; k++ {
-			src := buf.Channel(k)
-			for di, si := k, 0; di < maxSamples; di, si = di+nchan, si+1 {
-				dst[di] = float32(src[si])
-			}
-		}
-	default:
-		panic("missing")
-	}
-
-	return maxFrames
-}
-
 func Equal32(a, b []float32) bool {
 	if len(a) != len(b) {
 		return false
@@ -110,4 +38,54 @@ func Equal32(a, b []float32) bool {
 		}
 	}
 	return true
+}
+
+func CopySliceTo32(nchan int, buf []float32, dst audio.Buffer) (frameCount int) {
+	if dst.ChannelCount() != nchan {
+		panic("channel count does not match")
+	}
+
+	maxSamples := (len(buf) / nchan) * nchan
+	if dst.SampleCount() < maxSamples {
+		maxSamples = dst.SampleCount()
+	}
+
+	switch dst := dst.(type) {
+	case *audio.BufferF32:
+		copy(dst.Interleaved(), buf[:maxSamples])
+	case *audio.BufferF64:
+		main := dst.Interleaved()
+		for i := range main {
+			main[i] = float64(buf[i])
+		}
+	default:
+		panic("missing")
+	}
+
+	return maxSamples / nchan
+}
+
+func CopySliceFrom32(dst audio.Buffer, nchan int, buf []float32) (frameCount int) {
+	if dst.ChannelCount() != nchan {
+		panic("channel count does not match")
+	}
+
+	maxSamples := (len(buf) / nchan) * nchan
+	if dst.SampleCount() < maxSamples {
+		maxSamples = dst.SampleCount()
+	}
+
+	switch dst := dst.(type) {
+	case *audio.BufferF32:
+		copy(buf[:maxSamples], dst.Interleaved())
+	case *audio.BufferF64:
+		main := dst.Interleaved()
+		for i := range main {
+			buf[i] = float32(main[i])
+		}
+	default:
+		panic("missing")
+	}
+
+	return maxSamples / nchan
 }

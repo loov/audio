@@ -25,13 +25,9 @@ func (gain *Gain) Process(buf audio.Buffer) error {
 	if target == current {
 		switch buf := buf.(type) {
 		case *audio.BufferF32:
-			for k := 0; k < channelCount; k++ {
-				slice.Scale32(buf.Channel(k), float32(current))
-			}
+			slice.Scale32(buf.Interleaved(), float32(current))
 		case *audio.BufferF64:
-			for k := 0; k < channelCount; k++ {
-				slice.Scale64(buf.Channel(k), current)
-			}
+			slice.Scale64(buf.Interleaved(), float64(current))
 		default:
 			return audio.ErrUnknownBuffer
 		}
@@ -42,22 +38,22 @@ func (gain *Gain) Process(buf audio.Buffer) error {
 
 	switch buf := buf.(type) {
 	case *audio.BufferF32:
-		for k := 0; k < channelCount; k++ {
-			active = current
-			data := buf.Channel(k)
-			for i := range data {
-				data[i] *= float32(active)
-				active = (active + target) * 0.5
+		data := buf.Interleaved()
+		for i := 0; i < len(data); i += channelCount {
+			scale := float32(active)
+			for k := 0; k < channelCount; k++ {
+				data[i+k] *= scale
 			}
+			active = (active + target) * 0.5
 		}
 	case *audio.BufferF64:
-		for k := 0; k < channelCount; k++ {
-			active = current
-			data := buf.Channel(k)
-			for i := range data {
-				data[i] *= float64(active)
-				active = (active + target) * 0.5
+		data := buf.Interleaved()
+		for i := 0; i < len(data); i += channelCount {
+			scale := active
+			for k := 0; k < channelCount; k++ {
+				data[i+k] *= scale
 			}
+			active = (active + target) * 0.5
 		}
 	default:
 		return audio.ErrUnknownBuffer

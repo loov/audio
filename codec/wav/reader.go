@@ -68,7 +68,7 @@ func (reader *Reader) framesLeft() int {
 	return (len(reader.data.Data) - reader.head) / int(reader.format.BlockAlign)
 }
 
-func (reader *Reader) ReadInterleavedBlock(block []float32) (frameCount int) {
+func (reader *Reader) ReadBlock(block []float32) (frameCount int) {
 	if reader.framesLeft() == 0 {
 		return 0
 	}
@@ -101,11 +101,11 @@ func (reader *Reader) Read(buf audio.Buffer) (int, error) {
 	dst := buf.ShallowCopy()
 	for !dst.Empty() {
 		if len(reader.buffered) <= 0 {
-			n := reader.ReadInterleavedBlock(reader._buffered)
-			reader.buffered = reader._buffered[:n*channelCount]
+			framesRead := reader.ReadBlock(reader._buffered)
+			reader.buffered = reader._buffered[:framesRead*channelCount]
 		}
 
-		frameCount := slice.Split32(reader.ChannelCount(), reader.buffered, dst)
+		frameCount := slice.CopySliceTo32(reader.ChannelCount(), reader.buffered, dst)
 		reader.buffered = reader.buffered[frameCount*channelCount:]
 		dst.CutLeading(frameCount)
 

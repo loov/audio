@@ -2,27 +2,26 @@ package generate
 
 import (
 	"github.com/loov/audio"
-	"github.com/loov/audio/slice"
 )
 
 func MonoF32(out audio.Buffer, sample func() float32) error {
 	channelCount := out.ChannelCount()
 	switch out := out.(type) {
 	case *audio.BufferF32:
-		main := out.Channel(0)
-		for i := range main {
-			main[i] = float32(sample())
-		}
-		for k := 1; k < channelCount; k++ {
-			copy(out.Channel(k), main)
+		main := out.Interleaved()
+		for i := 0; i < len(main); i += channelCount {
+			s := float32(sample())
+			for k := 0; k < channelCount; k++ {
+				main[i+k] = s
+			}
 		}
 	case *audio.BufferF64:
-		main := out.Channel(0)
-		for i := range main {
-			main[i] = float64(sample())
-		}
-		for k := 1; k < channelCount; k++ {
-			copy(out.Channel(k), main)
+		main := out.Interleaved()
+		for i := 0; i < len(main); i += channelCount {
+			s := float64(sample())
+			for k := 0; k < channelCount; k++ {
+				main[i+k] = s
+			}
 		}
 	default:
 		//TODO: implement the slowest path
@@ -36,16 +35,16 @@ func StereoF32(out audio.Buffer, sample func() (float32, float32)) error {
 	switch out := out.(type) {
 	case *audio.BufferF32:
 		if channelCount >= 2 {
-			left, right := out.Channel(0), out.Channel(1)
-			for i := range left {
+			main := out.Interleaved()
+			for i := 0; i < len(main); i += channelCount {
 				leftsample, rightsample := sample()
-				left[i], right[i] = float32(leftsample), float32(rightsample)
-			}
-			for k := 2; k < channelCount; k++ {
-				slice.Zero32(out.Channel(k))
+				main[i], main[i+1] = float32(leftsample), float32(rightsample)
+				for k := 2; k < channelCount; k++ {
+					main[i+k] = 0
+				}
 			}
 		} else {
-			main := out.Channel(0)
+			main := out.Interleaved()
 			for i := range main {
 				leftsample, rightsample := sample()
 				main[i] = float32(leftsample+rightsample) * 0.5
@@ -53,16 +52,16 @@ func StereoF32(out audio.Buffer, sample func() (float32, float32)) error {
 		}
 	case *audio.BufferF64:
 		if channelCount >= 2 {
-			left, right := out.Channel(0), out.Channel(1)
-			for i := range left {
+			main := out.Interleaved()
+			for i := 0; i < len(main); i += channelCount {
 				leftsample, rightsample := sample()
-				left[i], right[i] = float64(leftsample), float64(rightsample)
-			}
-			for k := 2; k < channelCount; k++ {
-				slice.Zero64(out.Channel(k))
+				main[i], main[i+1] = float64(leftsample), float64(rightsample)
+				for k := 2; k < channelCount; k++ {
+					main[i+k] = 0
+				}
 			}
 		} else {
-			main := out.Channel(0)
+			main := out.Interleaved()
 			for i := range main {
 				leftsample, rightsample := sample()
 				main[i] = float64(leftsample+rightsample) * 0.5

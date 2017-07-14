@@ -11,9 +11,10 @@ var (
 
 type Buffer interface {
 	SampleRate() int
-	// Channel(int index) []T
+	// Interleaved() []T
 	ChannelCount() int
 	FrameCount() int
+	SampleCount() int
 	Duration() time.Duration
 	Empty() bool
 
