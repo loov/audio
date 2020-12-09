@@ -52,7 +52,7 @@ func readU32LE(r *uint32, v []byte) int {
 }
 
 func readU16LE(r *uint16, v []byte) int {
-	*r = uint16(v[0]<<0) | uint16(v[1]<<8)
+	*r = uint16(v[0])<<0 | uint16(v[1])<<8
 	return 2
 }
 

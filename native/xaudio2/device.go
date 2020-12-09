@@ -1,6 +1,6 @@
 package xaudio2
 
-import "github.com/egonelbre/exp/audio"
+import "github.com/loov/audio"
 
 type OutputDevice struct {
 }

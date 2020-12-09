@@ -4,12 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"sandbox/raintree/qpc"
 
 	"github.com/loov/audio"
 	"github.com/loov/audio/bufferutil"
 	"github.com/loov/audio/native"
 	"github.com/loov/audio/sequencer"
+	"github.com/loov/hrtime"
 )
 
 var (
@@ -75,12 +75,12 @@ func main() {
 	ViolinB1.Volume = 0
 
 	for {
-		start := qpc.Now()
+		start := hrtime.Now()
 		if err := seq.Process(buf); err != nil {
 			check(err)
 		}
-		finish := qpc.Now()
-		duration := finish.Sub(start).Duration()
+		finish := hrtime.Now()
+		duration := finish - start
 		if duration > buf.Duration() {
 			fmt.Println("SKIP ", duration, " expected ", buf.Duration())
 		}

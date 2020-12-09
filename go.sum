@@ -1,0 +1,4 @@
+github.com/gordonklaus/portaudio v0.0.0-20200911161147-bb74aa485641 h1:B7ADnac3Yy6Vtcp2mstnsjUtarYcjy4AL0R6eNEhZAk=
+github.com/gordonklaus/portaudio v0.0.0-20200911161147-bb74aa485641/go.mod h1:HfYnZi/ARQKG0dwH5HNDmPCHdLiFiBf+SI7DbhW7et4=
+github.com/loov/hrtime v1.0.3 h1:LiWKU3B9skJwRPUf0Urs9+0+OE3TxdMuiRPOTwR0gcU=
+github.com/loov/hrtime v1.0.3/go.mod h1:yDY3Pwv2izeY4sq7YcPX/dtLwzg5NU1AxWuWxKwd0p0=
